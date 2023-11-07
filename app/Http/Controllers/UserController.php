@@ -5,9 +5,48 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Unique;
 
 class UserController extends Controller {
+
+  public function storeAvatar(Request $request) {
+    $request->validate([
+      'avatar' => 'required|image|max:3000'
+    ]);
+
+    // Get Current user
+    $user = auth()->user();
+
+    // Generate filename
+    $filename = $user->id . '-' . uniqid() . '.jpg';
+
+    // Modify/resize image before storing
+    $imgData = Image::make($request->file('avatar'))->fit(120)->encode('jpg');
+
+    // Store Image
+    Storage::put('public/avatars/' . $filename, $imgData);
+
+    // Delete old/existing avatar
+    $oldAvatar = $user->avatar;
+
+    // Update and save in Database
+    $user->avatar = $filename;
+    $user->save();
+
+    // Only delete avatar if avatar is not default image.
+    if ($oldAvatar != "/fallback-avatar.jpg") {
+      Storage::delete(str_replace("/storage/", "public/", $oldAvatar));
+    }
+
+    // Redirect back to manage-avatar form
+    return back()->with('Avatar Saved Successfully!');
+  }
+
+  public function showAvatarForm() {
+    return view('avatar-form');
+  }
 
   public function visitDashboard() {
     return 'Welcome to the dashboard';
@@ -18,6 +57,7 @@ class UserController extends Controller {
       'profile-posts',
       [
         'username' => $user->username,
+        'avatar' => $user->avatar,
         'user_posts' => $user->userPosts()->latest()->get(),
         'posts_count' => $user->userPosts()->count()
       ]
