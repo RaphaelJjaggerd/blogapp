@@ -37,6 +37,7 @@ class UserController extends Controller {
 
     // Only delete avatar if avatar is not default image.
     if ($oldAvatar != "/fallback-avatar.jpg") {
+      // We replace /storage/ with public/ from $oldavatar then delete that oldAvatar file
       Storage::delete(str_replace("/storage/", "public/", $oldAvatar));
     }
 
