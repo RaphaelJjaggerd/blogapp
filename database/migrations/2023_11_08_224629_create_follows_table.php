@@ -12,8 +12,8 @@ return new class extends Migration {
     Schema::create('follows', function (Blueprint $table) {
       $table->id();
       $table->foreignId('user_id')->constrained();  // Follower
-      $table->unsignedBigInteger('followed_user'); // Column being referenced
-      $table->foreign('followed_user')->references('id')->on('users'); // States followeduser references the id coulmn of the user table
+      $table->unsignedBigInteger('followeduser'); // Column being referenced
+      $table->foreign('followeduser')->references('id')->on('users'); // States followeduser references the id coulmn of the user table
       $table->timestamps();
     });
   }
