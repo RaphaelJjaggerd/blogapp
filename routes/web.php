@@ -21,6 +21,8 @@ Route::get('/admins-only', [UserController::class, 'visitDashboard'])->middlewar
 
 // Profile Related Routes
 Route::get('/profile/{user:username}', [UserController::class, 'profile']);
+Route::get('/profile/{user:username}/followers', [UserController::class, 'profileFollowers']);
+Route::get('/profile/{user:username}/following', [UserController::class, 'profileFollowing']);
 
 // User related routes
 Route::get('/', [UserController::class, 'showCorrectHomepage'])->name('login');

@@ -75,6 +75,48 @@ class UserController extends Controller {
       ]
     );
   }
+  public function profileFollowers(User $user) {
+    $currentlyFollowing = 0;
+
+    if (auth()->check()) {
+      $currentlyFollowing = Follow::where([
+        ['user_id', '=', auth()->user()->id],
+        ['followeduser', '=', $user->id]
+      ])->count();
+    }
+
+    return view(
+      'profile-followers',
+      [
+        'currentlyFollowing' => $currentlyFollowing,
+        'username' => $user->username,
+        'avatar' => $user->avatar,
+        'user_posts' => $user->userPosts()->latest()->get(),
+        'posts_count' => $user->userPosts()->count()
+      ]
+    );
+  }
+  public function profileFollowing(User $user) {
+    $currentlyFollowing = 0;
+
+    if (auth()->check()) {
+      $currentlyFollowing = Follow::where([
+        ['user_id', '=', auth()->user()->id],
+        ['followeduser', '=', $user->id]
+      ])->count();
+    }
+
+    return view(
+      'profile-following',
+      [
+        'currentlyFollowing' => $currentlyFollowing,
+        'username' => $user->username,
+        'avatar' => $user->avatar,
+        'user_posts' => $user->userPosts()->latest()->get(),
+        'posts_count' => $user->userPosts()->count()
+      ]
+    );
+  }
 
   public function logout() {
     auth()->logout();
