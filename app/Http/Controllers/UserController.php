@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Follow;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\View;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Unique;
@@ -54,7 +55,7 @@ class UserController extends Controller {
     return 'Welcome to the dashboard';
   }
 
-  public function profile(User $user) {
+  private function getSharedData($user) {
     $currentlyFollowing = 0;
 
     if (auth()->check()) {
@@ -63,57 +64,43 @@ class UserController extends Controller {
         ['followeduser', '=', $user->id]
       ])->count();
     }
+
+    View::share('sharedData', [
+      'currentlyFollowing' => $currentlyFollowing,
+      'username' => $user->username,
+      'avatar' => $user->avatar,
+      'postsCount' => $user->userPosts()->count()
+    ]);
+  }
+
+  public function profile(User $user) {
+    $this->getSharedData($user);
 
     return view(
       'profile-posts',
       [
-        'currentlyFollowing' => $currentlyFollowing,
-        'username' => $user->username,
-        'avatar' => $user->avatar,
-        'user_posts' => $user->userPosts()->latest()->get(),
-        'posts_count' => $user->userPosts()->count()
+        'userPosts' => $user->userPosts()->latest()->get(),
       ]
     );
   }
-  public function profileFollowers(User $user) {
-    $currentlyFollowing = 0;
 
-    if (auth()->check()) {
-      $currentlyFollowing = Follow::where([
-        ['user_id', '=', auth()->user()->id],
-        ['followeduser', '=', $user->id]
-      ])->count();
-    }
+  public function profileFollowers(User $user) {
+    $this->getSharedData($user);
 
     return view(
       'profile-followers',
       [
-        'currentlyFollowing' => $currentlyFollowing,
-        'username' => $user->username,
-        'avatar' => $user->avatar,
-        'user_posts' => $user->userPosts()->latest()->get(),
-        'posts_count' => $user->userPosts()->count()
+        'userPosts' => $user->userPosts()->latest()->get(),
       ]
     );
   }
   public function profileFollowing(User $user) {
-    $currentlyFollowing = 0;
-
-    if (auth()->check()) {
-      $currentlyFollowing = Follow::where([
-        ['user_id', '=', auth()->user()->id],
-        ['followeduser', '=', $user->id]
-      ])->count();
-    }
+    $this->getSharedData($user);
 
     return view(
       'profile-following',
       [
-        'currentlyFollowing' => $currentlyFollowing,
-        'username' => $user->username,
-        'avatar' => $user->avatar,
-        'user_posts' => $user->userPosts()->latest()->get(),
-        'posts_count' => $user->userPosts()->count()
+        'userPosts' => $user->userPosts()->latest()->get(),
       ]
     );
   }
