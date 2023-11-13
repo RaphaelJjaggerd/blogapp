@@ -9,6 +9,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\View;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Storage;
+
 use Illuminate\Validation\Rules\Unique;
 
 class UserController extends Controller {
@@ -69,7 +70,9 @@ class UserController extends Controller {
       'currentlyFollowing' => $currentlyFollowing,
       'username' => $user->username,
       'avatar' => $user->avatar,
-      'postsCount' => $user->userPosts()->count()
+      'postsCount' => $user->userPosts()->count(),
+      'followerCount' => $user->followers()->count(),
+      'followingCount' => $user->followingTheseUsers()->count()
     ]);
   }
 
@@ -86,11 +89,10 @@ class UserController extends Controller {
 
   public function profileFollowers(User $user) {
     $this->getSharedData($user);
-
     return view(
       'profile-followers',
       [
-        'userPosts' => $user->userPosts()->latest()->get(),
+        'followers' => $user->followers()->latest()->get(),
       ]
     );
   }
@@ -100,7 +102,7 @@ class UserController extends Controller {
     return view(
       'profile-following',
       [
-        'userPosts' => $user->userPosts()->latest()->get(),
+        'following' => $user->followingTheseUsers()->latest()->get(),
       ]
     );
   }
@@ -110,9 +112,15 @@ class UserController extends Controller {
     return redirect('/')->with('success', 'You are logged out!');
   }
 
-  public function showCorrectHomepage() {
+  public function showCorrectHomepage(User $user) {
     if (auth()->check()) {
-      return view('homepage-feed');
+      return view(
+        'homepage-feed',
+        [
+          'userPosts' => auth()->user()->feedPosts()->latest()->paginate(4)
+
+        ]
+      );
     } else {
       return view('homepage');
     }
