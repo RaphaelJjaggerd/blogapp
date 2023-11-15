@@ -7,6 +7,14 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 
 class PostController extends Controller {
+
+  public function search($term) {
+    $posts = Post::search($term)->get();
+    // Loads the id from the user of this post
+    $posts->load('user:id,username,avatar');
+    return $posts;
+  }
+
   public function actuallyUpdate(Post $post, Request $request) {
     // Validate fields
     $incomingFields = $request->validate([
