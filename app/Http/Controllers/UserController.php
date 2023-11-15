@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OurExampleEvent;
 use App\Models\User;
 use App\Models\Follow;
 use Illuminate\Http\Request;
@@ -96,6 +97,7 @@ class UserController extends Controller {
       ]
     );
   }
+
   public function profileFollowing(User $user) {
     $this->getSharedData($user);
 
@@ -107,10 +109,6 @@ class UserController extends Controller {
     );
   }
 
-  public function logout() {
-    auth()->logout();
-    return redirect('/')->with('success', 'You are logged out!');
-  }
 
   public function showCorrectHomepage(User $user) {
     if (auth()->check()) {
@@ -124,6 +122,17 @@ class UserController extends Controller {
     } else {
       return view('homepage');
     }
+  }
+
+  public function logout() {
+    event(new OurExampleEvent(
+      [
+        'username' => auth()->user()->username,
+        'action' => 'Logout'
+      ]
+    ));
+    auth()->logout();
+    return redirect('/')->with('success', 'You are logged out!');
   }
 
   public function login(Request $request) {
@@ -141,6 +150,13 @@ class UserController extends Controller {
       )
     ) {
       $request->session()->regenerate();
+      event(new OurExampleEvent(
+        [
+          'username' => auth()->user()->username,
+          'action' => 'Login'
+
+        ]
+      ));
       return redirect('/')->with('success', 'You have successfully logged in!');
     } else {
       return redirect('/')->with('failure', 'Invalid login.');
