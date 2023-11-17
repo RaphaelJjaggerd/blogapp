@@ -1,5 +1,7 @@
 <?php
 
+use App\Events\ChatMessage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
@@ -47,3 +49,26 @@ Route::put('/post/{post}', [PostController::class, 'actuallyUpdate'])->middlewar
 
 // Search related Routes
 Route::get('/search/{term}', [PostController::class, 'search']);
+
+
+// Chat related Routes
+Route::post('/send-chat-message', function (Request $request) {
+  $formFields = $request->validate([
+    'textValue' => 'required',
+  ]);
+
+  // Make sure there are no white spaces.
+  if (!trim(strip_tags($formFields['textValue']))) {
+    return response()->noContnet();
+  }
+
+  // Broadcast a new instance of our chat event
+  broadcast(new ChatMessage(
+    [
+      'username' => auth()->user()->username,
+      'textValue' => strip_tags($request->textValue),
+      'avatar' => auth()->user()->avatar,
+    ]
+  ))->toOthers();
+  return response()->noContent();
+})->middleware('mustBeLoggedIn');
