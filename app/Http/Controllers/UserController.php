@@ -15,68 +15,28 @@ use Illuminate\Validation\Rules\Unique;
 
 class UserController extends Controller {
 
-  public function storeAvatar(Request $request) {
-    $request->validate([
-      'avatar' => 'required|image|max:3000'
-    ]);
 
-    // Get Current user
-    $user = auth()->user();
-
-    // Generate filename
-    $filename = $user->id . '-' . uniqid() . '.jpg';
-
-    // Modify/resize image before storing
-    $imgData = Image::make($request->file('avatar'))->fit(120)->encode('jpg');
-
-    // Store Image
-    Storage::put('public/avatars/' . $filename, $imgData);
-
-    // Delete old/existing avatar
-    $oldAvatar = $user->avatar;
-
-    // Update and save in Database
-    $user->avatar = $filename;
-    $user->save();
-
-    // Only delete avatar if avatar is not default image.
-    if ($oldAvatar != "/fallback-avatar.jpg") {
-      // We replace /storage/ with public/ from $oldavatar then delete that oldAvatar file
-      Storage::delete(str_replace("/storage/", "public/", $oldAvatar));
-    }
-
-    // Redirect back to manage-avatar form
-    return back()->with('Avatar Saved Successfully!');
-  }
-
-  public function showAvatarForm() {
-    return view('avatar-form');
-  }
 
   public function visitDashboard() {
     return 'Welcome to the dashboard';
   }
 
-  private function getSharedData($user) {
-    $currentlyFollowing = 0;
-
+  public function showCorrectHomepage(User $user) {
     if (auth()->check()) {
-      $currentlyFollowing = Follow::where([
-        ['user_id', '=', auth()->user()->id],
-        ['followeduser', '=', $user->id]
-      ])->count();
-    }
+      return view(
+        'homepage-feed',
+        [
+          'userPosts' => auth()->user()->feedPosts()->latest()->paginate(4)
 
-    View::share('sharedData', [
-      'currentlyFollowing' => $currentlyFollowing,
-      'username' => $user->username,
-      'avatar' => $user->avatar,
-      'postsCount' => $user->userPosts()->count(),
-      'followerCount' => $user->followers()->count(),
-      'followingCount' => $user->followingTheseUsers()->count()
-    ]);
+        ]
+      );
+    } else {
+      return view('homepage');
+    }
   }
 
+
+  // PROFILE
   public function profile(User $user) {
     $this->getSharedData($user);
 
@@ -140,20 +100,7 @@ class UserController extends Controller {
   }
 
 
-  public function showCorrectHomepage(User $user) {
-    if (auth()->check()) {
-      return view(
-        'homepage-feed',
-        [
-          'userPosts' => auth()->user()->feedPosts()->latest()->paginate(4)
-
-        ]
-      );
-    } else {
-      return view('homepage');
-    }
-  }
-
+  // AUTHENTICATION 
   public function logout() {
     event(new OurExampleEvent(
       [
@@ -211,5 +158,64 @@ class UserController extends Controller {
 
     // Redirect user.
     return redirect('/')->with('success', 'Account Created successfully!');
+  }
+
+  public function storeAvatar(Request $request) {
+    $request->validate([
+      'avatar' => 'required|image|max:3000'
+    ]);
+
+    // Get Current user
+    $user = auth()->user();
+
+    // Generate filename
+    $filename = $user->id . '-' . uniqid() . '.jpg';
+
+    // Modify/resize image before storing
+    $imgData = Image::make($request->file('avatar'))->fit(120)->encode('jpg');
+
+    // Store Image
+    Storage::put('public/avatars/' . $filename, $imgData);
+
+    // Delete old/existing avatar
+    $oldAvatar = $user->avatar;
+
+    // Update and save in Database
+    $user->avatar = $filename;
+    $user->save();
+
+    // Only delete avatar if avatar is not default image.
+    if ($oldAvatar != "/fallback-avatar.jpg") {
+      // We replace /storage/ with public/ from $oldavatar then delete that oldAvatar file
+      Storage::delete(str_replace("/storage/", "public/", $oldAvatar));
+    }
+
+    // Redirect back to manage-avatar form
+    return back()->with('Avatar Saved Successfully!');
+  }
+
+  public function showAvatarForm() {
+    return view('avatar-form');
+  }
+
+  // MISCALLENEOUS 
+  private function getSharedData($user) {
+    $currentlyFollowing = 0;
+
+    if (auth()->check()) {
+      $currentlyFollowing = Follow::where([
+        ['user_id', '=', auth()->user()->id],
+        ['followeduser', '=', $user->id]
+      ])->count();
+    }
+
+    View::share('sharedData', [
+      'currentlyFollowing' => $currentlyFollowing,
+      'username' => $user->username,
+      'avatar' => $user->avatar,
+      'postsCount' => $user->userPosts()->count(),
+      'followerCount' => $user->followers()->count(),
+      'followingCount' => $user->followingTheseUsers()->count()
+    ]);
   }
 }
